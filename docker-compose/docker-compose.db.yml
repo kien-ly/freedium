@@ -26,6 +26,8 @@ services:
     hostname: postgres_freedium
     networks:
       - freedium_net
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ../postgres:/var/lib/postgresql/data
     environment:
