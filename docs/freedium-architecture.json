@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Freedium Service Architecture",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1385,
+      760
+    ],
+    "output": "docs/freedium-architecture.html"
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "Reader / browser",
+      "sublabel": "Article URL request",
+      "pos": [
+        30,
+        180
+      ],
+      "size": [
+        170,
+        110
+      ]
+    },
+    {
+      "id": "caddy",
+      "type": "backend",
+      "label": "Caddy",
+      "sublabel": "Reverse proxy and static assets",
+      "pos": [
+        300,
+        180
+      ],
+      "size": [
+        180,
+        110
+      ]
+    },
+    {
+      "id": "web",
+      "type": "backend",
+      "label": "Freedium web",
+      "sublabel": "FastAPI routes and HTML rendering",
+      "pos": [
+        580,
+        180
+      ],
+      "size": [
+        205,
+        120
+      ]
+    },
+    {
+      "id": "parser",
+      "type": "backend",
+      "label": "Medium parser",
+      "sublabel": "Resolve, fetch, parse, render",
+      "pos": [
+        900,
+        180
+      ],
+      "size": [
+        205,
+        120
+      ]
+    },
+    {
+      "id": "medium",
+      "type": "external",
+      "label": "Medium",
+      "sublabel": "Upstream article content",
+      "pos": [
+        1190,
+        500
+      ],
+      "size": [
+        180,
+        100
+      ]
+    },
+    {
+      "id": "cache",
+      "type": "database",
+      "label": "DragonflyDB",
+      "sublabel": "Redis-compatible cache (prod)",
+      "pos": [
+        580,
+        500
+      ],
+      "size": [
+        205,
+        110
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Persistent article cache",
+      "pos": [
+        900,
+        500
+      ],
+      "size": [
+        205,
+        110
+      ]
+    },
+    {
+      "id": "proxy",
+      "type": "security",
+      "label": "HAProxy balancer",
+      "sublabel": "Prod proxy egress",
+      "pos": [
+        1190,
+        180
+      ],
+      "size": [
+        180,
+        120
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "request",
+      "from": "client",
+      "to": "caddy",
+      "label": "HTTPS"
+    },
+    {
+      "id": "forward",
+      "from": "caddy",
+      "to": "web",
+      "label": "Forward"
+    },
+    {
+      "id": "parse",
+      "from": "web",
+      "to": "parser",
+      "label": "Render article"
+    },
+    {
+      "id": "prod-proxy",
+      "from": "parser",
+      "to": "proxy",
+      "label": "PROXY_LIST"
+    },
+    {
+      "id": "upstream",
+      "from": "proxy",
+      "to": "medium",
+      "label": "Fetch content",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1280,
+        314
+      ]
+    },
+    {
+      "id": "cached-readwrite",
+      "from": "web",
+      "to": "cache",
+      "label": "Read / write cache",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        683,
+        314
+      ]
+    },
+    {
+      "id": "parser-db",
+      "from": "parser",
+      "to": "postgres",
+      "label": "Read / write articles",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1003,
+        314
+      ]
+    }
+  ]
+}

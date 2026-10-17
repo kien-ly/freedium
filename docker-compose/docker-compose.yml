@@ -1,7 +1,9 @@
 include:
-  - docker-compose.main.yml
-  - docker-compose.wgcf.yml
-  - docker-compose.db.yml
-  - docker-compose.utility.yml
-  - docker-compose.proxy.yml
-  # - docker-compose.plausible.yml
+  - path:
+      - docker-compose.main.yml
+      - docker-compose.wgcf.yml
+      - docker-compose.db.yml
+      - docker-compose.utility.yml
+      - docker-compose.proxy.yml
+      # - docker-compose.plausible.yml
+    env_file: ../.env

@@ -9,10 +9,10 @@
 ## Stack:
 
 - Backend:
-  - language: Python 3.9+
-  - framework: Unicorn, FastAPI
+  - language: Python 3.12+
+  - framework: Uvicorn, Gunicorn, FastAPI
 - Frontend:
-  - framework: Tailwinds CSS v3, Jinja2
+  - framework: Tailwind CSS v3, Jinja2
   - monitoring: Sentry
 - Database:
   - PostgreSQL, Dragonfly (Redis and Memcached compatible key-value database)
@@ -21,78 +21,99 @@
 
 ## Project configuration:
 
-There is three (3) docker-compose profiles:
+There are three (3) docker-compose profiles:
 
-- `min` - without 2 Cluster of Cloudflare WARP proxy, HAProxy proxy balancer, Plausible, Grafana.
-- `local` - based on `min`, but with `freedium.local` exposed hostname, both 80 and 443 ports are exposed, with self-signed TLS certificate.
-- `prod` - with all services for production.
+- `min` - Lightweight local setup without Cloudflare WARP proxy clusters, HAProxy balancer, Plausible, or Grafana.
+- `local` - Based on `min`, but with `freedium.local` exposed hostname (ports 80 and 443 with self-signed TLS certificate) and reverse proxy.
+- `prod` - Full stack including proxies, Plausible analytics, and monitoring for production deployment.
 
 ### Requirements:
 
-- Docker, Docker Compose, last version is preferred.
-- Linux, preferably rolling release. We can't guarantee that Freedium instance will work on other OS. Tested on Ubuntu 22.04 and Fedora 39.
+- Docker & Docker Compose (Docker Compose v2+ recommended)
+- Linux (tested on Ubuntu 22.04 & Fedora 39) or Windows/macOS with Docker Desktop
 - git
-- Preferably, fresh and clean brain.
 
 ### Local run:
 
-To configure your Freedium instance, follow these steps:
+To configure and run your Freedium instance:
 
 1. Clone the repository:
 
-   ```
+   ```bash
    git clone https://codeberg.org/Freedium-cfd/web/ ./freedium-web --depth 1
    cd ./freedium-web
    ```
 
 2. Create and configure the environment file:
 
-   ```
+   ```bash
    cp .env_template .env
    ```
 
-   Open the `.env` file and adjust the values as needed for your setup.
+   Open `.env` and adjust the configuration as needed:
+   - `POSTGRES_PORT`: External PostgreSQL port on the host (default `5432`). Change this (e.g., `5430`) if host port `5432` is already occupied by a local PostgreSQL or another container.
+   - `HOST_ADDRESS`: Address of your Freedium instance (default `http://localhost:6752`).
+   - `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`: Credentials for pgAdmin (accessible at port `5433`).
 
 3. Set up the Docker network:
 
-   ```
-   sudo docker network create caddy_net
+   ```bash
+   docker network create caddy_net
    ```
 
-4. (Optional) Change your hosts file:
+4. (Optional) Configure domain mapping in your hosts file (for `local` profile):
 
-   ```
+   ```bash
+   # Linux / macOS:
    sudo nano /etc/hosts
-   # or
-   vim /etc/hosts
-   # and when you are closed vim, type `:w !sudo tee %` to save file without executing vim in root mode
+   # Windows: edit C:\Windows\System32\drivers\etc\hosts as Administrator
    ```
 
    Add the following line:
 
-   ```
+   ```text
    127.0.0.1 freedium.local
    ```
 
-5. Start the Freedium services (`min` profile):
+5. Start the Freedium services:
 
-   ```
-   sudo docker compose --profile local -f ./docker-compose/docker-compose.yml up
-   ```
+   - **Option A: `local` profile** (with local domain `freedium.local`):
+     ```bash
+     docker compose --profile local -f ./docker-compose/docker-compose.yml up -d
+     ```
+
+   - **Option B: `min` profile** (lightweight setup):
+     ```bash
+     docker compose --profile min -f ./docker-compose/docker-compose.yml up -d
+     ```
 
    Stopping the services:
 
-   ```
-   sudo docker compose --profile local -f ./docker-compose/docker-compose.yml down
+   ```bash
+   docker compose --profile local -f ./docker-compose/docker-compose.yml down
+   # or for min:
+   docker compose --profile min -f ./docker-compose/docker-compose.yml down
    ```
 
-And now you can access local instance of Freedium by opening browser and type `https://freedium.local` or `http://localhost:6752` if you ignored 4th step. There is would be a warning about insecure connection, because we use self-signed TLS certificate. Ignore it.
+### Accessing Services:
+
+- **Freedium Web App**: `https://freedium.local` (or `http://localhost:6752` if accessed directly)
+- **Direct Backend**: `http://localhost:7080`
+- **pgAdmin**: `http://localhost:5433`
+- **PostgreSQL (host tools like DBeaver/psql)**: `localhost:${POSTGRES_PORT}` (default: `5432`, e.g., `5430`)
+
+> [!NOTE]
+> If accessing via `https://freedium.local`, your browser may show a warning about an insecure connection because of the self-signed TLS certificate. You can safely proceed.
 
 ### Production run:
 
-All production services are running on `prod` profile. If you use Dockerized reverse proxy, you can specify network `caddy_freedium_net` with `external: true` option in networks section of your reverse proxy container. Specify `caddy_freedium` hostname with port `6752` (or `6753` for Plausible) in your reverse proxy configuration.
+All production services run on the `prod` profile:
 
-As alternative, you can directly change docker-compose configurations to use your reverse proxy. See `docker-compose` and `caddy` folders for more details.
+```bash
+docker compose --profile prod -f ./docker-compose/docker-compose.yml up -d
+```
+
+If you use a separate Dockerized reverse proxy, attach it to the `caddy_freedium_net` network (`external: true`). Route to the `caddy_freedium` hostname on port `6752` (or `6753` for Plausible). See `docker-compose` and `caddy` folders for more details.
 
 ## Roadmap
 
