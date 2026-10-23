@@ -47,7 +47,7 @@ services:
     networks:
       - freedium_net
     ports:
-      - 5433:80
+      - "${PGADMIN_PORT:-5433}:80"
     env_file:
       - ../.env
     hostname: pgadmin4_freedium
